@@ -6,8 +6,7 @@ function Navbar() {
     <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
       <div className="container">
         <Link className="navbar-brand fw-bold" to="/">
-        <span className="text-danger">Techie's</span> Hub
-         
+          <span className="text-danger">Techie’s</span> Hub
         </Link>
 
         <button
@@ -29,8 +28,8 @@ function Navbar() {
                 to="/"
                 className={({ isActive }) =>
                   isActive
-                    ? "nav-link active fw-semibold text-primary"
-                    : "nav-link"
+                    ? "nav-link active fw-bold text-danger"
+                    : "nav-link text-dark"
                 }
               >
                 Home
@@ -42,8 +41,8 @@ function Navbar() {
                 to="/create"
                 className={({ isActive }) =>
                   isActive
-                    ? "nav-link active fw-semibold text-primary"
-                    : "nav-link"
+                    ? "nav-link active fw-semibold text-danger"
+                    : "nav-link text-dark"
                 }
               >
                 Create Blog

@@ -4,6 +4,7 @@ import BlogList from "./components/BlogList";
 import BlogDetails from "./components/BlogDetails";
 import BlogForm from "./components/BlogForm";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import Navbar from "./components/Navbar";
 
 

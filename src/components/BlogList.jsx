@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 function BlogList() {
   const [blogs, setBlogs] = useState([]);
@@ -9,11 +10,10 @@ function BlogList() {
 
   const fetchBlogs = async () => {
     try {
-      const res = await fetch(API_URL);
-      const data = await res.json();
-      setBlogs(data);
+      const res = await axios.get(API_URL);
+      setBlogs(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching blogs:", err);
     } finally {
       setLoading(false);
     }
@@ -26,10 +26,11 @@ function BlogList() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this blog?")) return;
     try {
-      await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-      fetchBlogs();
+      await axios.delete(`${API_URL}/${id}`);
+      fetchBlogs(); // Refresh list after deletion
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting blog:", err);
+      alert("Failed to delete blog. Please try again.");
     }
   };
 
@@ -54,16 +55,11 @@ function BlogList() {
 
   return (
     <div className="container mt-5">
-    
-     
-  <div className="text-end mb-4 mx-3">
-    <Link to="/create" className="btn btn-danger btn-sm rounded-pill px-4">
-    + New Blog
-  </Link>
-
-  </div>
-
-
+      <div className="text-end mb-4 mx-3">
+        <Link to="/create" className="btn btn-danger btn-sm rounded-pill px-4">
+          + New Blog
+        </Link>
+      </div>
 
       <div className="row g-4">
         {blogs.map((blog) => (
@@ -83,13 +79,13 @@ function BlogList() {
                   <div>
                     <button
                       onClick={() => navigate(`/edit/${blog._id}`)}
-                      className="btn btn-outline-warning btn-sm me-2"
+                      className="btn btn-outline-warning rounded-pill btn-sm me-2"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(blog._id)}
-                      className="btn btn-outline-danger btn-sm"
+                      className="btn btn-outline-danger rounded-pill btn-sm"
                     >
                       Delete
                     </button>

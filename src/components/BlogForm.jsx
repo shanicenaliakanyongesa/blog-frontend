@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
+import axios from "axios";
 
 function BlogForm() {
   const [form, setForm] = useState({ title: "", snippet: "", body: "" });
@@ -12,15 +13,14 @@ function BlogForm() {
     if (id) {
       const fetchBlog = async () => {
         try {
-          const res = await fetch(`${API_URL}/${id}`);
-          const data = await res.json();
+          const res = await axios.get(`${API_URL}/${id}`);
           setForm({
-            title: data.title,
-            snippet: data.snippet,
-            body: data.body,
+            title: res.data.title,
+            snippet: res.data.snippet,
+            body: res.data.body,
           });
         } catch (err) {
-          console.error(err);
+          console.error("Error fetching blog:", err);
         }
       };
       fetchBlog();
@@ -32,20 +32,21 @@ function BlogForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const method = id ? "PUT" : "POST";
-      const url = id ? `${API_URL}/${id}` : API_URL;
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      if (!res.ok) throw new Error("Failed to save blog");
+      if (id) {
+        // Update existing blog
+        await axios.put(`${API_URL}/${id}`, form, {
+          headers: { "Content-Type": "application/json" },
+        });
+      } else {
+        // Create new blog
+        await axios.post(API_URL, form, {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
 
       navigate("/");
     } catch (err) {
-      console.error(err);
+      console.error("Error saving blog:", err);
       alert("Error saving blog. Please try again.");
     }
   };
@@ -53,7 +54,9 @@ function BlogForm() {
   return (
     <div className="container mt-5">
       <div className="card shadow p-4">
-        <h3 className="mb-4 fw-bold text-center text-danger">{id ? "Edit Blog" : "Create Blog"}</h3>
+        <h3 className="mb-4 fw-bold text-center text-danger">
+          {id ? "Edit Blog" : "Create Blog"}
+        </h3>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
