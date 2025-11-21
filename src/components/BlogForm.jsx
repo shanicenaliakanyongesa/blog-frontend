@@ -3,59 +3,132 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import axios from "axios";
 
 function BlogForm() {
-  const [form, setForm] = useState({ title: "", snippet: "", body: "" });
+  // -------------------------------------
+  // 1. ROUTER + CONSTANTS
+  // -------------------------------------
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { id } = useParams(); // If editing
-  const API_URL = "http://localhost:5000/api/blogs";
 
-  // Fetch blog if editing
-  useEffect(() => {
-    if (id) {
-      const fetchBlog = async () => {
-        try {
-          const res = await axios.get(`${API_URL}/${id}`);
-          setForm({
-            title: res.data.title,
-            snippet: res.data.snippet,
-            body: res.data.body,
-          });
-        } catch (err) {
-          console.error("Error fetching blog:", err);
-        }
-      };
-      fetchBlog();
-    }
-  }, [id]);
+  //  Centralized API constants
+  const API_BASE_URL = "https://apiblog-bqb7.onrender.com/api";
+  const BLOGS_ENDPOINT = `${API_BASE_URL}/blogs`;
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+
+  // -------------------------------------
+  // 2. STATE
+  // -------------------------------------
+  const [form, setForm] = useState({ title: "", snippet: "", body: "" });
+  const [loading, setLoading] = useState(false);
+
+  // -------------------------------------
+  // 3. DERIVED VALUES
+  // -------------------------------------
+  const isEditing = Boolean(id);
+
+  // -------------------------------------
+  // 4. EVENT HANDLERS
+  // -------------------------------------
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!user?._id) {
+      alert("You must be logged in to submit a blog.");
+      navigate("/login");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      if (id) {
-        // Update existing blog
-        await axios.put(`${API_URL}/${id}`, form, {
+      const payload = { ...form, createdBy: user._id };
+
+      if (isEditing) {
+        await axios.put(`${BLOGS_ENDPOINT}/${id}`, payload, {
           headers: { "Content-Type": "application/json" },
         });
+        alert("Blog updated successfully!");
       } else {
-        // Create new blog
-        await axios.post(API_URL, form, {
+        await axios.post(BLOGS_ENDPOINT, payload, {
           headers: { "Content-Type": "application/json" },
         });
+        alert("Blog created successfully!");
       }
 
       navigate("/");
     } catch (err) {
       console.error("Error saving blog:", err);
-      alert("Error saving blog. Please try again.");
+      alert(err.response?.data?.message || "Error saving blog. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
+  // -------------------------------------
+  // 5. API FUNCTIONS
+  // -------------------------------------
+  const fetchBlog = async () => {
+    try {
+      const res = await axios.get(`${BLOGS_ENDPOINT}/${id}`);
+      const blog = res.data;
+
+      // Only allow owner to edit
+      const blogOwnerId = blog.createdBy?._id || blog.createdBy;
+      if (String(blogOwnerId) !== String(user._id)) {
+        alert("You are not authorized to edit this blog.");
+        navigate("/");
+        return;
+      }
+
+      setForm({
+        title: blog.title,
+        snippet: blog.snippet,
+        body: blog.body,
+      });
+    } catch (err) {
+      console.error("Error fetching blog:", err);
+      alert("Error fetching blog. Redirecting...");
+      navigate("/");
+    }
+  };
+
+  // -------------------------------------
+  // 6. SIDE EFFECTS
+  // -------------------------------------
+  useEffect(() => {
+    if (!user?._id) {
+      alert("Please log in to create or edit blogs.");
+      navigate("/login");
+    }
+  }, [navigate, user]);
+
+  useEffect(() => {
+    if (isEditing) fetchBlog();
+  }, [id]);
+
+  // -------------------------------------
+  // 7. CONDITIONAL RENDERING
+  // -------------------------------------
+  if (loading)
+    return (
+      <div className="text-center mt-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+
+  // -------------------------------------
+  // 8. UI
+  // -------------------------------------
   return (
     <div className="container mt-5">
       <div className="card shadow p-4">
         <h3 className="mb-4 fw-bold text-center text-danger">
-          {id ? "Edit Blog" : "Create Blog"}
+          {isEditing ? "Edit Blog" : "Create Blog"}
         </h3>
 
         <form onSubmit={handleSubmit}>
@@ -109,8 +182,11 @@ function BlogForm() {
             <Link to="/" className="btn btn-danger btn-sm rounded-pill">
               ← Cancel
             </Link>
-            <button type="submit" className="btn btn-dark text-light btn-sm rounded-pill">
-              {id ? "Update Blog" : "Create Blog"}
+            <button
+              type="submit"
+              className="btn btn-dark text-light btn-sm rounded-pill"
+            >
+              {isEditing ? "Update Blog" : "Create Blog"}
             </button>
           </div>
         </form>
